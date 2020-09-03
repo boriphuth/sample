@@ -1,20 +1,50 @@
-version: "3"
+version: '3'
 
 services:
-  sonarqube:
-    image: sonarqube:7.7-community
-    expose:
-      - 9000
+  nginx:
+    image: nginx:latest
+    container_name: nginx
     ports:
-      - "9000:9000"
+      - 443:443
     volumes:
-      - sonarqube_conf:/opt/sonarqube/conf
-      - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_extensions:/opt/sonarqube/extensions
-      - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
+      - /opt/nginx/yourhost.xyz.key:/etc/nginx/yourhost.xyz.key:ro
+      - /opt/nginx/yourhost.xyz.crt:/etc/nginx/yourhost.xyz.crt:ro
+      - /opt/nginx/sonarqube.conf:/etc/nginx/conf.d/sonarqube.conf:z
+    networks:
+      - sonarnet
+    restart: always
 
-volumes:
-  sonarqube_conf:
-  sonarqube_data:
-  sonarqube_extensions:
-  sonarqube_bundled-plugins:
+  database:
+    image: postgres:10
+    container_name: postgresql
+    networks:
+      - sonarnet
+    environment:
+      - POSTGRES_USER=xxxx
+      - POSTGRES_PASSWORD=xxxx
+      - POSTGRES_DB=sonarqube
+    volumes:
+      - /opt/postgresql:/var/lib/postgresql:z
+      - /opt/postgresql/data:/var/lib/postgresql/data:z
+
+  sonarqube:
+    image: sonarqube:latest
+    container_name: sonarqube
+    hostname: sonarqube
+    networks:
+      - sonarnet
+    depends_on:
+      - database
+    ports:
+      - 9000:9000
+    environment:
+      - sonar.jdbc.url=jdbc:postgresql://database:5432/sonarqube
+    volumes:
+      - /opt/sonarqube/conf:/opt/sonarqube/conf:z
+      - /opt/sonarqube/extensions/plugins:/opt/sonarqube/extensions/plugins:z
+      - /opt/sonarqube/extensions/downloads:/opt/sonarqube/extensions/downloads:z
+      - /opt/sonarqube/data:/opt/sonarqube/data:z
+
+networks:
+  sonarnet:
+    driver: bridge
