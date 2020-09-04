@@ -12,17 +12,18 @@ node {
     stage('pre-build setup'){
 		catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
 	    	sh """
-                docker run \
+                docker run -d \
                 -p 9000:9000 \
                 -v sonarqube_extensions:/opt/sonarqube/extensions \
                 sonarqube:8.4-community
          	"""
-            sleep time: 5, unit: 'MINUTES'
-            timeout(1) {
+            stimeout(120) {
                 waitUntil {
-                    script {
-                        def r = sh script: 'curl -L http://192.168.34.16:9000 /dev/null', returnStdout: true
-                        return (r == 0);
+                    try {
+                        sh 'wget -q http://192.168.34.16:9000 -O /dev/null'
+                        return true
+                    } catch (exception) {
+                        return false
                     }
                 }
             }
@@ -40,22 +41,20 @@ node {
     }
     stage('SAST'){
 		catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
-				withSonarQubeEnv('sonarqube'){
-					dir("backend"){
+		    withSonarQubeEnv('sonarqube'){
+			    dir("backend"){
 						sh "mvn clean package sonar:sonar"
-					}
 				}
-				def qualitygate = waitForQualityGate()
-                if (qualitygate.status != "OK") {
-                    error "Pipeline aborted due to quality gate coverage failure: ${qualitygate.status}"
-                }
-                
-				// timeout(5) {
-				// def qg = waitForQualityGate() 
-				// if (qg.status != 'OK') {     
-				// 		error "Pipeline aborted due to quality gate failure: ${qg.status}"    
-				// 	}	
-				// }
+			}
+            
+            sleep(60)
+
+			timeout(5) {
+                def qg = waitForQualityGate() 
+                if (qg.status != 'OK') {     
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"    
+                }	
+		    }
     	}
 	}
     stage('Clean up'){
