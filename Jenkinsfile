@@ -6,10 +6,6 @@ node {
                 docker volume create --name sonarqube_data
                 docker volume create --name sonarqube_extensions
                 docker volume create --name sonarqube_logs
-                docker run --rm \
-                -p 9000:9000 \
-                -v sonarqube_extensions:/opt/sonarqube/extensions \
-                sonarqube:8.4-community
          	"""
 	  	}
     }
