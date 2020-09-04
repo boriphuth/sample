@@ -13,13 +13,20 @@ node {
          	"""
 	  	}
     }
+    // stage('pre-build setup'){
+	// 	catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
+	//     	sh """
+    //             docker run -d \
+    //             -p 9000:9000 \
+    //             -v sonarqube_extensions:/opt/sonarqube/extensions \
+    //             sonarqube:8.4-community
+    //      	"""
+	//   	}
+    // } 
     stage('pre-build setup'){
 		catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
 	    	sh """
-                docker run -d \
-                -p 9000:9000 \
-                -v sonarqube_extensions:/opt/sonarqube/extensions \
-                sonarqube:8.4-community
+                docker-compose -f Sonarqube/sonar.yml up -d
          	"""
 	  	}
     } 
@@ -49,7 +56,7 @@ node {
     stage('Clean up'){
 		catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
         	sh """
-				rm -r ${repoName} || true
+				rm -r sample || true
 				mkdir -p reports/trufflehog
 				mkdir -p reports/snyk
 				mkdir -p reports/Anchore-Engine
