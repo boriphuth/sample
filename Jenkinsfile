@@ -9,23 +9,23 @@ node {
          	"""
 	  	}
     }
-    // stage('pre-build setup'){
-	// 	catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
-	//     	sh """
-    //             docker run -d \
-    //             -p 9000:9000 \
-    //             -v sonarqube_extensions:/opt/sonarqube/extensions \
-    //             sonarqube:8.4-community
-    //      	"""
-	//   	}
-    // } 
     stage('pre-build setup'){
 		catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
 	    	sh """
-                docker-compose -f Sonarqube/sonar.yml up -d
+                docker run -d \
+                -p 9000:9000 \
+                -v sonarqube_extensions:/opt/sonarqube/extensions \
+                sonarqube:8.4-community
          	"""
 	  	}
     } 
+    // stage('pre-build setup'){
+	// 	catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
+	//     	sh """
+    //             docker-compose -f Sonarqube/sonar.yml up -d
+    //      	"""
+	//   	}
+    // } 
     stage('SCM') {
     checkout poll: false, scm: [$class: 'GitSCM', branches: [[name: 'master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[url: 'https://github.com/boriphuth/sample.git']]]
     }
