@@ -12,11 +12,19 @@ node {
     stage('pre-build setup'){
 		catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
 	    	sh """
-                docker run -d \
+                docker run \
                 -p 9000:9000 \
                 -v sonarqube_extensions:/opt/sonarqube/extensions \
                 sonarqube:8.4-community
          	"""
+            timeout(5) {
+                waitUntil {
+                    script {
+                        def r = sh script: 'curl -L http://192.168.34.16:9000 /dev/null', returnStdout: true
+                        return (r == 0);
+                    }
+                }
+            }
 	  	}
     } 
     // stage('pre-build setup'){
@@ -66,8 +74,7 @@ node {
 			//cp Archerysec-ZeD/owasp_report reports/OWASP/ || ture	    
 			sh """
 				docker system prune -f
-				docker-compose -f Sonarqube/sonar.yml down
-				docker-compose -f Anchore-Engine/docker-compose.yaml down -v
+				docker rm -vf \$(docker ps -a -q)
 			"""
 	  	}
     }
