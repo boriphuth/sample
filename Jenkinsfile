@@ -3,8 +3,8 @@ node {
     stage('Init Sonarqube'){
 		catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
 	    	sh """
-                sudo sysctl -w vm.max_map_count=262144
-                sudo sysctl -w fs.file-max=65536
+                sysctl -w vm.max_map_count=262144
+                sysctl -w fs.file-max=65536
                 ulimit -n 65536
                 ulimit -u 4096
                 docker volume create --name sonarqube_data
@@ -24,8 +24,6 @@ node {
                 -p 9000:9000 \
                 -v sonarqube_extensions:/opt/sonarqube/extensions \
                 sonarqube:8.4-community
-                // docker-compose -f Sonarqube/sonar.yml up -d
-            	// docker-compose -f Anchore-Engine/docker-compose.yaml up -d
                 sleep 15 # wait for db to come up
          	"""
 	  	}
