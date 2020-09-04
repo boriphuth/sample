@@ -3,10 +3,6 @@ node {
     stage('Init Sonarqube'){
 		catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
 	    	sh """
-                sysctl -w vm.max_map_count=262144
-                sysctl -w fs.file-max=65536
-                ulimit -n 65536
-                ulimit -u 4096
                 docker volume create --name sonarqube_data
                 docker volume create --name sonarqube_extensions
                 docker volume create --name sonarqube_logs
@@ -24,7 +20,6 @@ node {
                 -p 9000:9000 \
                 -v sonarqube_extensions:/opt/sonarqube/extensions \
                 sonarqube:8.4-community
-                sleep 15 # wait for db to come up
          	"""
 	  	}
     } 
@@ -38,13 +33,39 @@ node {
 						sh "mvn clean package sonar:sonar"
 					}
 				}
-				
-				timeout(time: 1, unit: 'HOURS'){   
-				def qg = waitForQualityGate() 
-				if (qg.status != 'OK') {     
-						error "Pipeline aborted due to quality gate failure: ${qg.status}"    
-					}	
-				}
+				def qualitygate = waitForQualityGate()
+                if (qualitygate.status != "OK") {
+                    error "Pipeline aborted due to quality gate coverage failure: ${qualitygate.status}"
+                }
+                
+				// timeout(5) {
+				// def qg = waitForQualityGate() 
+				// if (qg.status != 'OK') {     
+				// 		error "Pipeline aborted due to quality gate failure: ${qg.status}"    
+				// 	}	
+				// }
     	}
 	}
+    stage('Clean up'){
+		catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE'){
+        	sh """
+				rm -r ${repoName} || true
+				mkdir -p reports/trufflehog
+				mkdir -p reports/snyk
+				mkdir -p reports/Anchore-Engine
+				mkdir -p reports/OWASP
+				mkdir -p reports/Inspec
+            	mv trufflehog reports/trufflehog || true
+				mv *.json *.html reports/snyk || true
+				cp -r /var/lib/jenkins/jobs/${JOB_NAME}/builds/${BUILD_NUMBER}/archive/Anchore*/*.json ./reports/Anchore-Engine ||  true
+				mv inspec_results reports/Inspec || true
+            """
+			//cp Archerysec-ZeD/owasp_report reports/OWASP/ || ture	    
+			sh """
+				docker system prune -f
+				docker-compose -f Sonarqube/sonar.yml down
+				docker-compose -f Anchore-Engine/docker-compose.yaml down -v
+			"""
+	  	}
+    }
 }
