@@ -20,8 +20,11 @@ node {
             timeout(120) {
                 waitUntil {
                     try {
-                        sh 'wget -q http://192.168.34.16:9000 -O /dev/null'
-                        return true
+                        def result = sh "curl http://192.168.34.16:9000/api/system/status | jq '.status'"
+                        if(result == "UP"){
+                            return true
+                        }
+                        return false  
                     } catch (exception) {
                         return false
                     }
