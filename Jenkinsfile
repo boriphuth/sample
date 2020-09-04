@@ -17,7 +17,8 @@ node {
                 -v sonarqube_extensions:/opt/sonarqube/extensions \
                 sonarqube:8.4-community
          	"""
-            timeout(5) {
+            sleep time: 5, unit: 'MINUTES'
+            timeout(1) {
                 waitUntil {
                     script {
                         def r = sh script: 'curl -L http://192.168.34.16:9000 /dev/null', returnStdout: true
