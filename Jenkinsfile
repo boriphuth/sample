@@ -17,7 +17,7 @@ node {
                 -v sonarqube_extensions:/opt/sonarqube/extensions \
                 sonarqube:8.4-community
          	"""
-            stimeout(120) {
+            timeout(120) {
                 waitUntil {
                     try {
                         sh 'wget -q http://192.168.34.16:9000 -O /dev/null'
@@ -46,7 +46,7 @@ node {
 						sh "mvn clean package sonar:sonar"
 				}
 			}
-            
+
             sleep(60)
 
 			timeout(5) {
