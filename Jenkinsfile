@@ -20,11 +20,19 @@ node {
             timeout(120) {
                 waitUntil {
                     try {
-                        def result = sh "curl http://192.168.34.16:9000/api/system/status | jq '.status'"
-                        if(result == "UP"){
-                            return true
-                        }
-                        return false  
+                        // def result = sh "curl -s http://192.168.34.16:9000/api/system/status | jq '.status'"
+                        // if(result == "UP"){
+                        //     return true
+                        // }
+                        // return false  
+                        //     def result = sh (
+                        //         script: 'curl http://192.168.34.16:9000/api/system/status | grep "\"status\":\"UP\""',
+                        //         returnStatus: true
+                        //   )
+                        final String url = "http://192.168.34.16:9000/api/system/status"
+                        final String response = sh(script: 'curl -s http://192.168.34.16:9000/api/system/status', returnStdout: true).trim()
+                        echo response
+                        return (response == 0)
                     } catch (exception) {
                         return false
                     }
